@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct addViewSheet: View {
+struct addSheet: View {
     var body: some View {
         Text("My Clicker의\n동작을 설정하여\niPhone을 제어해보세요!")
             .fontWeight(.bold)
@@ -17,5 +17,5 @@ struct addViewSheet: View {
 }
 
 #Preview {
-    addViewSheet()
+    addSheet()
 }
