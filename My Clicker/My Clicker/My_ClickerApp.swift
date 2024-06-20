@@ -11,7 +11,7 @@ import SwiftUI
 struct My_ClickerApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            mainVeiw()
         }
     }
 }
