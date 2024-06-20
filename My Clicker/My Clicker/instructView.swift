@@ -6,6 +6,12 @@
 //
 
 import SwiftUI
+import CoreBluetooth
+import MediaPlayer
+import AVFoundation
+import AudioToolbox
+import Combine
+
 
 //@State var addViewSheet = false
 
@@ -29,6 +35,8 @@ struct instructView: View {
     
     @State private var selectedPage = 0
     @State private var isSheetPresented = false
+    @StateObject private var volumeButtonHandler = VolumeButtonHandler()
+    @State private var showAlert = false
     
     var body: some View {
         
@@ -51,12 +59,12 @@ struct instructView: View {
             
             VStack(alignment:.leading){
                 VStack(alignment:.leading){
-                    Text("MY Clicker!")
-                        .font(.system(size:20))
-                        .fontWeight(/*@START_MENU_TOKEN@*/.bold/*@END_MENU_TOKEN@*/)
-                        .foregroundColor(.basicGreen)
-                        .padding(.top, 20)
-                        .padding(.bottom, 5)
+//                    Text("MY Clicker!")
+//                        .font(.system(size:20))
+//                        .fontWeight(/*@START_MENU_TOKEN@*/.bold/*@END_MENU_TOKEN@*/)
+//                        .foregroundColor(.basicGreen)
+//                        .padding(.top, 20)
+//                        .padding(.bottom, 5)
                     
                     
                     Text("연결에 성공하였습니다!")
@@ -120,11 +128,15 @@ struct instructView: View {
                         .tag(1)
                         
                         VStack{
-                            Image("greenVibration")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 190, height: 190)
-                                .padding(.bottom, 145)
+                            Button(action: {
+                                showAlert = true
+                            }) {
+                                Image("greenVibration")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 190, height: 190)
+                                    .padding(.bottom, 145)
+                            }
                             
                             Text("03 진동소리")
                                 .font(.system(size:20))
@@ -139,11 +151,23 @@ struct instructView: View {
                         }
                         .padding(.bottom,50)
                         .tag(2)
+                        .alert(isPresented: $showAlert) {
+                            Alert(title: Text("My Clicker에서 아이폰 찾는중입니다."), message: Text("진동을 멈추려면 아래 버튼을 눌러주세요!"), dismissButton: .default(Text("찾음"),action: {
+                                volumeButtonHandler.stopVibration()
+                            }
+                                                                                                                                           )
+                            )
+                        }
                     }
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                     .padding(.top, 112)
                     .frame(width: 350, height: 580)
-                    
+                    .onAppear {
+                        volumeButtonHandler.setupVolumeButtonHandling()
+                    }
+                    .onDisappear {
+                        volumeButtonHandler.cleanup()
+                    }
                     
                     
                 }
@@ -161,6 +185,125 @@ struct instructView: View {
         
     }
 }
+
+class VolumeButtonHandler: ObservableObject {
+    @Published var message: String = "Press the Volume Up button"
+    private var cancellables = Set<AnyCancellable>()
+    private var lastVolumeChangeTime: Date?
+    @State private var showAlert = false
+    
+    private var audioSession: AVAudioSession!
+    private var initialVolume: Float = 0.5
+    private var volumeObservation: NSKeyValueObservation?
+    private var lastPressTime: Date?
+    private let doublePressThreshold: TimeInterval = 0.5 // 더블 클릭 시간 간격
+    private var pressTimes: [Date] = []
+    private let triplePressThreshold: TimeInterval = 1.0 // 세 번 클릭 시간 간격
+    private var vibrationTimer: Timer?
+    private var isVibrating = false
+    
+    func setupVolumeButtonHandling() {
+        audioSession = AVAudioSession.sharedInstance()
+        
+        do {
+            try audioSession.setActive(true)
+            initialVolume = audioSession.outputVolume
+            setupVolumeObservation()
+        } catch {
+            print("Failed to activate audio session: \(error)")
+        }
+    }
+    
+    private func setupVolumeObservation() {
+        volumeObservation = audioSession.observe(\.outputVolume, options: [.new]) { [weak self] (audioSession, change) in
+            if let newVolume = change.newValue {
+                if newVolume > self?.initialVolume ?? 0.5 {
+                    self?.handleVolumeUpButton()
+                }
+                self?.initialVolume = newVolume
+            }
+        }
+    }
+    
+    private func handleVolumeUpButton() {
+        print("Volume Up button pressed")
+        // 알람 사운드 재생
+        AudioServicesPlaySystemSound(SystemSoundID(1005)) // 1005는 알람 사운드 ID입니다
+        let now = Date()
+                
+                if let lastPressTime = lastPressTime, now.timeIntervalSince(lastPressTime) < doublePressThreshold {
+                    toggleFlashlight()
+                }
+                
+                lastPressTime = now
+        
+        pressTimes.append(now)
+                pressTimes = pressTimes.filter { now.timeIntervalSince($0) < triplePressThreshold }
+                
+                if pressTimes.count == 3 {
+                    startVibration()
+                    //showAlert = true
+                    pressTimes.removeAll()
+                }
+//            .alert(isPresented: $showAlert) {
+//                        Alert(title: Text("Alert"), message: Text("This is an alert!"), dismissButton: .default(Text("OK")))
+//                    }
+        
+        // 메시지 업데이트
+        DispatchQueue.main.async {
+            self.message = "Volume Up button was pressed!"
+        }
+    }
+    private func toggleFlashlight() {
+            guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else {
+                print("Device does not have a torch")
+                return
+            }
+            
+            do {
+                try device.lockForConfiguration()
+                if device.torchMode == .on {
+                    device.torchMode = .off
+                } else {
+                    try device.setTorchModeOn(level: AVCaptureDevice.maxAvailableTorchLevel)
+                }
+                device.unlockForConfiguration()
+            } catch {
+                print("Failed to toggle flashlight: \(error)")
+            }
+        }
+    private func triggerVibration() {
+            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+            print("Vibration triggered")
+        }
+    
+    private func startVibration() {
+            guard !isVibrating else { return }
+            isVibrating = true
+            vibrationTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+                AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+            }
+        }
+        
+    func stopVibration() {
+            vibrationTimer?.invalidate()
+            vibrationTimer = nil
+            isVibrating = false
+        }
+    
+    func cleanup() {
+        volumeObservation?.invalidate()
+        volumeObservation = nil
+        
+        do {
+            try audioSession.setActive(false)
+        } catch {
+            print("Failed to deactivate audio session: \(error)")
+        }
+    }
+    
+}
+
 
 
 

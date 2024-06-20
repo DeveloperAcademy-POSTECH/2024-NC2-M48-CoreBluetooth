@@ -41,16 +41,15 @@ struct deviceConnect: View {
             .padding(.bottom, 99)
             NavigationLink(destination: temBluetooth()){
                 Text("켜러가기")
-                    .foregroundColor(.white)
-                    .fontWeight(.bold)
-                    .shadow(color: .black.opacity(0.25), radius: 3, x: 0, y: 0)
-                    .padding([.vertical], 18)
-                    .padding([.horizontal],148)
-                    .background{
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.basicGreen)
-                    }
-                    .padding(.bottom, 30)
+                    .frame(width: 328, height: 60)
+                    .foregroundStyle(.white)
+                    .fontWeight(.medium)
+                    .background(
+                        Rectangle()
+                            .frame(width: 328, height: 60)
+                            .foregroundStyle(Color.basicGreen)
+                            .cornerRadius(8.0)
+                    )
             }
             .padding(.leading, 18)
             //                .padding(.bottom, 43)
@@ -58,7 +57,7 @@ struct deviceConnect: View {
         
         .navigationBarBackButtonHidden(true)
         .edgesIgnoringSafeArea(.all)
-        
+        .navigationBarTitle("")
     }
 }
 
