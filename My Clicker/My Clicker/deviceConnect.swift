@@ -41,12 +41,12 @@ struct deviceConnect: View {
             .padding(.bottom, 99)
             NavigationLink(destination: temBluetooth()){
                 Text("켜러가기")
-                    .frame(width: 328, height: 60)
+                    .frame(width: 353, height: 50)
                     .foregroundStyle(.white)
                     .fontWeight(.medium)
                     .background(
                         Rectangle()
-                            .frame(width: 328, height: 60)
+                            .frame(width: 353, height: 50)
                             .foregroundStyle(Color.basicGreen)
                             .cornerRadius(8.0)
                     )

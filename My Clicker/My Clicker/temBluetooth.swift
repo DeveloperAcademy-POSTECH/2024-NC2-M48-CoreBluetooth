@@ -78,7 +78,7 @@ struct temBluetooth: View {
             NavigationStack {
                 VStack {
                     List {
-                        Section(header: Text("MY DEVICES").padding(.top, -10).padding(.leading, -13).bold()) {
+                        Section(header: Text("MY DEVICES").padding(.top, -10).padding(.leading, -20).bold()) {
                             ForEach(bluetoothManager.discoveredPeripherals, id: \.identifier) { peripheral in
                                 Button(action: {
                                     bluetoothManager.connectPeripheral(peripheral)
@@ -104,12 +104,12 @@ struct temBluetooth: View {
                         Button(action: {}, label: {
                             NavigationLink(destination: instructView()) {
                                 Text("확인")
-                                    .frame(width: 328, height: 60)
+                                    .frame(width: 353, height: 50)
                                     .foregroundStyle(.white)
                                     .fontWeight(.medium)
                                     .background(
                                         Rectangle()
-                                            .frame(width: 328, height: 60)
+                                            .frame(width: 353, height: 50)
                                             .foregroundStyle(Color.basicGreen)
                                             .cornerRadius(8.0)
                                     )
@@ -136,12 +136,12 @@ struct temBluetooth: View {
                     }
                     else {Button(action: {}, label: {
                         Text("확인")
-                            .frame(width: 328, height: 60)
+                            .frame(width: 353, height: 50)
                             .foregroundStyle(.white)
                             .fontWeight(.medium)
                             .background(
                                 Rectangle()
-                                    .frame(width: 328, height: 60)
+                                    .frame(width: 353, height: 50)
                                     .foregroundStyle(Color.fog)
                                     .cornerRadius(8.0)
                             )
@@ -151,6 +151,7 @@ struct temBluetooth: View {
                 }
             }
             //.padding(EdgeInsets(top: -20, leading: 0, bottom: 0, trailing: 0))
+            .navigationBarBackButtonHidden(true)
         }
     }
 }

@@ -41,30 +41,46 @@ struct instructView: View {
     var body: some View {
         
         VStack(alignment:.leading){
-            
-            Button(action: {
-                isSheetPresented.toggle()
-            }) {
-                Image(systemName: "plus")
-                    .foregroundColor(.basicGreen)
-                    .frame(width: 16, height: 16)
-                    .padding(.leading,355)
+            HStack{
+                Button(action: {
+                    isSheetPresented.toggle()
+                }) {
+                    Image(systemName: "plus")
+                        .foregroundColor(.basicGreen)
+                        .frame(width: 16, height: 16)
+                        .padding(.leading,355)
+                }
+                .sheet(isPresented: $isSheetPresented){
+                    addSheet()
+                        .presentationDragIndicator(.visible)
+                    Button(action: {
+                        isSheetPresented = false
+                    }) {
+                        Text("확인")
+                            .frame(width: 353, height: 50)
+                            .foregroundStyle(.white)
+                            .fontWeight(.medium)
+                            .background(
+                                Rectangle()
+                                    .frame(width: 353, height: 50)
+                                    .foregroundStyle(Color.basicGreen)
+                                    .cornerRadius(8.0)
+                            )
+                    }
+                    
+                }
+                Spacer()
+                    .frame(height: 30)
             }
-            .sheet(isPresented: $isSheetPresented){
-                addSheet()
-                    .presentationDragIndicator(.visible)
-                
-            }
-            
             
             VStack(alignment:.leading){
                 VStack(alignment:.leading){
-//                    Text("MY Clicker!")
-//                        .font(.system(size:20))
-//                        .fontWeight(/*@START_MENU_TOKEN@*/.bold/*@END_MENU_TOKEN@*/)
-//                        .foregroundColor(.basicGreen)
-//                        .padding(.top, 20)
-//                        .padding(.bottom, 5)
+                    //                    Text("MY Clicker!")
+                    //                        .font(.system(size:20))
+                    //                        .fontWeight(/*@START_MENU_TOKEN@*/.bold/*@END_MENU_TOKEN@*/)
+                    //                        .foregroundColor(.basicGreen)
+                    //                        .padding(.top, 20)
+                    //                        .padding(.bottom, 5)
                     
                     
                     Text("연결에 성공하였습니다!")
@@ -174,14 +190,15 @@ struct instructView: View {
                 
             }
         }
-        .padding (.top, 75)
+        .padding (.top, 85)
         .edgesIgnoringSafeArea(.all)
         .frame(maxWidth: .infinity, alignment: .leading)
         
         customIndicator(numberOfPages: 3, currentPage: selectedPage)
             .padding(.bottom, 80)
         
-            .navigationBarBackButtonHidden(true)
+            .navigationBarTitle("돌아가기")
+//            .navigationBarBackButtonHidden(true)
         
     }
 }
@@ -230,24 +247,24 @@ class VolumeButtonHandler: ObservableObject {
         // 알람 사운드 재생
         AudioServicesPlaySystemSound(SystemSoundID(1005)) // 1005는 알람 사운드 ID입니다
         let now = Date()
-                
-                if let lastPressTime = lastPressTime, now.timeIntervalSince(lastPressTime) < doublePressThreshold {
-                    toggleFlashlight()
-                }
-                
-                lastPressTime = now
+        
+        if let lastPressTime = lastPressTime, now.timeIntervalSince(lastPressTime) < doublePressThreshold {
+            toggleFlashlight()
+        }
+        
+        lastPressTime = now
         
         pressTimes.append(now)
-                pressTimes = pressTimes.filter { now.timeIntervalSince($0) < triplePressThreshold }
-                
-                if pressTimes.count == 3 {
-                    startVibration()
-                    //showAlert = true
-                    pressTimes.removeAll()
-                }
-//            .alert(isPresented: $showAlert) {
-//                        Alert(title: Text("Alert"), message: Text("This is an alert!"), dismissButton: .default(Text("OK")))
-//                    }
+        pressTimes = pressTimes.filter { now.timeIntervalSince($0) < triplePressThreshold }
+        
+        if pressTimes.count == 3 {
+            startVibration()
+            //showAlert = true
+            pressTimes.removeAll()
+        }
+        //            .alert(isPresented: $showAlert) {
+        //                        Alert(title: Text("Alert"), message: Text("This is an alert!"), dismissButton: .default(Text("OK")))
+        //                    }
         
         // 메시지 업데이트
         DispatchQueue.main.async {
@@ -255,41 +272,41 @@ class VolumeButtonHandler: ObservableObject {
         }
     }
     private func toggleFlashlight() {
-            guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else {
-                print("Device does not have a torch")
-                return
-            }
-            
-            do {
-                try device.lockForConfiguration()
-                if device.torchMode == .on {
-                    device.torchMode = .off
-                } else {
-                    try device.setTorchModeOn(level: AVCaptureDevice.maxAvailableTorchLevel)
-                }
-                device.unlockForConfiguration()
-            } catch {
-                print("Failed to toggle flashlight: \(error)")
-            }
-        }
-    private func triggerVibration() {
-            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
-            print("Vibration triggered")
-        }
-    
-    private func startVibration() {
-            guard !isVibrating else { return }
-            isVibrating = true
-            vibrationTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-                AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
-            }
+        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else {
+            print("Device does not have a torch")
+            return
         }
         
-    func stopVibration() {
-            vibrationTimer?.invalidate()
-            vibrationTimer = nil
-            isVibrating = false
+        do {
+            try device.lockForConfiguration()
+            if device.torchMode == .on {
+                device.torchMode = .off
+            } else {
+                try device.setTorchModeOn(level: AVCaptureDevice.maxAvailableTorchLevel)
+            }
+            device.unlockForConfiguration()
+        } catch {
+            print("Failed to toggle flashlight: \(error)")
         }
+    }
+    private func triggerVibration() {
+        AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+        print("Vibration triggered")
+    }
+    
+    private func startVibration() {
+        guard !isVibrating else { return }
+        isVibrating = true
+        vibrationTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+        }
+    }
+    
+    func stopVibration() {
+        vibrationTimer?.invalidate()
+        vibrationTimer = nil
+        isVibrating = false
+    }
     
     func cleanup() {
         volumeObservation?.invalidate()
